@@ -41,6 +41,8 @@ public class PurchaseServiceImpl extends ServiceImpl<PurchaseMapper, PurchaseShe
 
     @Override
     public List<PurchaseSheet> getAll() {
+        System.out.println("开始查询");
+        Long  start = System.currentTimeMillis();
         String source  = (String) redisTemplate.opsForValue().get("purchaseSheetList");
 
         if(source == null){
@@ -70,9 +72,14 @@ public class PurchaseServiceImpl extends ServiceImpl<PurchaseMapper, PurchaseShe
             source = JSON.toJSONString(result);
             redisTemplate.opsForValue().set("purchaseSheetList", source, 10, TimeUnit.MINUTES );
 
+            Long  end = System.currentTimeMillis();
+            System.out.println("在数据库中查询：" + (end-start) + "ms");
             return result;
         }else {
             List<PurchaseSheet> result = JSONArray.parseArray(source, PurchaseSheet.class);
+
+            Long  end = System.currentTimeMillis();
+            System.out.println("在redis中查询：" + (end-start) + "ms");
             return result;
         }
 
@@ -182,32 +189,33 @@ public class PurchaseServiceImpl extends ServiceImpl<PurchaseMapper, PurchaseShe
 
     @Override
     public void updateRedis() {
-        QueryWrapper<PurchaseSheetPO> wrapper1 = new QueryWrapper<>();
+//        QueryWrapper<PurchaseSheetPO> wrapper1 = new QueryWrapper<>();
+//
+//        wrapper1.orderByDesc("id");
+//        List<PurchaseSheetPO> purchaseSheetList = this.list(wrapper1);
+//        List<PurchaseSheet> result = new ArrayList<>();
+//
+//        for (PurchaseSheetPO purchaseSheetPO : purchaseSheetList) {
+//            QueryWrapper<PurchaseSheetContent> wrapper = new QueryWrapper<>();
+//
+//            wrapper.eq("purchase_sheet_id", purchaseSheetPO.getId() );
+//
+//            List<PurchaseSheetContent> list = purchaseContentService.list(wrapper);
+//
+//            PurchaseSheet purchaseSheet = new PurchaseSheet();
+//
+//            BeanUtils.copyProperties(purchaseSheetPO, purchaseSheet);
+//
+//            purchaseSheet.setPurchaseSheetContent(list);
+//
+//            result.add(purchaseSheet);
+//
+//        }
+//
+//        String source = JSON.toJSONString(result);
+//        redisTemplate.opsForValue().set("purchaseSheetList", source,10, TimeUnit.MINUTES);
 
-        wrapper1.orderByDesc("id");
-        List<PurchaseSheetPO> purchaseSheetList = this.list(wrapper1);
-        List<PurchaseSheet> result = new ArrayList<>();
-
-        for (PurchaseSheetPO purchaseSheetPO : purchaseSheetList) {
-            QueryWrapper<PurchaseSheetContent> wrapper = new QueryWrapper<>();
-
-            wrapper.eq("purchase_sheet_id", purchaseSheetPO.getId() );
-
-            List<PurchaseSheetContent> list = purchaseContentService.list(wrapper);
-
-            PurchaseSheet purchaseSheet = new PurchaseSheet();
-
-            BeanUtils.copyProperties(purchaseSheetPO, purchaseSheet);
-
-            purchaseSheet.setPurchaseSheetContent(list);
-
-            result.add(purchaseSheet);
-
-        }
-
-        String source = JSON.toJSONString(result);
-        redisTemplate.opsForValue().set("purchaseSheetList", source,10, TimeUnit.MINUTES);
-
+        redisTemplate.delete("purchaseSheetList");
         return;
     }
 }
